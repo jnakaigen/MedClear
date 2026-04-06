@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import UploadPage from "./pages/UploadPage";
@@ -15,8 +16,9 @@ export default function App() {
         <Navbar />
         <main className="flex-1">
           <Routes>
+            <Route path="/" element={<LandingGuard><LandingPage /></LandingGuard>} />
             <Route path="/auth" element={<AuthGuard><AuthPage /></AuthGuard>} />
-            <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
             <Route path="/reports/:id" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
             <Route path="/timeline" element={<ProtectedRoute><TimelinePage /></ProtectedRoute>} />
@@ -28,9 +30,16 @@ export default function App() {
   );
 }
 
-// Redirect authenticated users away from auth page
+// Authenticated users skip landing page → go to dashboard
+function LandingGuard({ children }) {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+// Authenticated users skip auth page → go to dashboard
 function AuthGuard({ children }) {
   const { isAuthenticated } = useAuth();
-  if (isAuthenticated) return <Navigate to="/" replace />;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return children;
 }

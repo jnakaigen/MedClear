@@ -141,7 +141,7 @@ export default function UploadPage() {
               Upload Another Report
             </button>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/dashboard")}
               className="px-6 py-2.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl text-sm transition-all hover:-translate-y-0.5"
             >
               Go to Dashboard

@@ -37,7 +37,7 @@ export default function ReportPage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-5 text-center">
           <p className="text-red-800 dark:text-red-300">{error}</p>
-          <Link to="/" className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline mt-2 inline-block">
+          <Link to="/dashboard" className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline mt-2 inline-block">
             Back to Dashboard
           </Link>
         </div>
@@ -49,7 +49,7 @@ export default function ReportPage() {
     <main className="max-w-3xl mx-auto w-full px-4 py-8">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6 text-sm">
-        <Link to="/" className="text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 no-underline">
+        <Link to="/dashboard" className="text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 no-underline">
           Dashboard
         </Link>
         <span className="text-gray-400">/</span>

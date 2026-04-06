@@ -44,7 +44,7 @@ export default function AuthPage() {
         : await signup(name, email, password);
 
       authLogin(data.token, data.user);
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {

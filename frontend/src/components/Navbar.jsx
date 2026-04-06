@@ -31,11 +31,14 @@ export default function Navbar() {
       isActive(path) ? "w-4/5" : "w-0"
     }`;
 
+  // Hide navbar chrome on landing page for a cleaner look
+  const isLanding = location.pathname === "/" && !isAuthenticated;
+
   return (
-    <header className="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg sticky top-0 z-10 transition-colors duration-300">
+    <header className={`border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 transition-colors duration-300 ${isLanding ? "bg-transparent backdrop-blur-md border-transparent dark:border-transparent" : "bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg"}`}>
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-3 no-underline">
+        <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-3 no-underline">
           <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center">
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -44,10 +47,10 @@ export default function Navbar() {
           <span className="text-lg font-bold text-gray-900 dark:text-white">MedClear</span>
         </Link>
 
-        {/* Nav links */}
+        {/* Nav links — authenticated */}
         {isAuthenticated && (
           <nav className="hidden sm:flex items-center gap-1">
-            <Link to="/" className={linkClass("/")}><span>Dashboard</span><span className={linkUnderline("/")} /></Link>
+            <Link to="/dashboard" className={linkClass("/dashboard")}><span>Dashboard</span><span className={linkUnderline("/dashboard")} /></Link>
             <Link to="/upload" className={linkClass("/upload")}><span>Upload</span><span className={linkUnderline("/upload")} /></Link>
             <Link to="/timeline" className={linkClass("/timeline")}><span>Timeline</span><span className={linkUnderline("/timeline")} /></Link>
           </nav>
@@ -72,7 +75,19 @@ export default function Navbar() {
             )}
           </button>
 
-          {/* User menu */}
+          {/* Auth buttons — unauthenticated */}
+          {!isAuthenticated && (
+            <div className="flex items-center gap-2">
+              <Link to="/auth" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg transition-colors no-underline">
+                Sign In
+              </Link>
+              <Link to="/auth" className="text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-1.5 rounded-lg transition-all hover:-translate-y-0.5 no-underline">
+                Get Started
+              </Link>
+            </div>
+          )}
+
+          {/* User menu — authenticated */}
           {isAuthenticated && (
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:inline">
@@ -89,10 +104,10 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile nav */}
+      {/* Mobile nav — authenticated */}
       {isAuthenticated && (
         <nav className="sm:hidden border-t border-gray-200 dark:border-gray-800 px-4 py-2 flex gap-1">
-          <Link to="/" className={linkClass("/")}>Dashboard</Link>
+          <Link to="/dashboard" className={linkClass("/dashboard")}>Dashboard</Link>
           <Link to="/upload" className={linkClass("/upload")}>Upload</Link>
           <Link to="/timeline" className={linkClass("/timeline")}>Timeline</Link>
         </nav>
