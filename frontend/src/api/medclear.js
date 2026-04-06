@@ -80,6 +80,28 @@ export async function deleteReport(id) {
   return data;
 }
 
+// --- Chat ---
+
+export async function sendChatMessage(reportId, message) {
+  const res = await fetch(`${API_BASE}/api/reports/${reportId}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ message }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Chat failed");
+  return data;
+}
+
+export async function getChatHistory(reportId) {
+  const res = await fetch(`${API_BASE}/api/reports/${reportId}/chat`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Failed to fetch chat history");
+  return data;
+}
+
 // --- Timeline ---
 
 export async function getTimeline() {

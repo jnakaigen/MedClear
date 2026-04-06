@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import ResultsCard from "../components/ResultsCard";
+import FollowUpChat from "../components/FollowUpChat";
 import { getReport } from "../api/medclear";
 
 export default function ReportPage() {
@@ -70,6 +71,10 @@ export default function ReportPage() {
       </div>
 
       <ResultsCard data={report} />
+
+      <div className="mt-8">
+        <FollowUpChat reportId={id} />
+      </div>
     </main>
   );
 }

@@ -164,6 +164,85 @@ async def simplify_report_from_image(
     return await _call_llm(payload)
 
 
+CHAT_SYSTEM_PROMPT = """You are a helpful medical assistant. The patient has received a simplified medical report and now has follow-up questions.
+
+You have access to their full medical report below. Use it to answer their questions accurately and in simple, plain English.
+
+RULES:
+1. Answer based ONLY on information in the report. If the answer is not in the report, say so honestly.
+2. Use simple, everyday language — explain as if talking to someone with no medical background.
+3. Be reassuring but honest. Don't downplay urgent findings.
+4. If they ask about medications, diet, or lifestyle changes, give practical advice but always recommend consulting their doctor.
+5. Keep answers concise — 2-4 sentences unless they ask for detail.
+
+MEDICAL REPORT:
+{report_context}"""
+
+
+async def _call_llm_text(payload: dict) -> str:
+    """Make the OpenRouter API call and return raw text response."""
+    api_key = _get_api_key()
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    last_error = None
+
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+                response = await client.post(
+                    OPENROUTER_URL, headers=headers, json=payload
+                )
+
+            if response.status_code in RETRYABLE_STATUS_CODES and attempt < MAX_RETRIES:
+                await asyncio.sleep(2 ** (attempt + 1))
+                continue
+
+            if response.status_code != 200:
+                raise ValueError(
+                    f"OpenRouter API returned status {response.status_code}: {response.text}"
+                )
+
+            result = response.json()
+            return result["choices"][0]["message"]["content"]
+
+        except httpx.TimeoutException:
+            last_error = "The request timed out. Please try again."
+            if attempt < MAX_RETRIES:
+                await asyncio.sleep(2 ** (attempt + 1))
+                continue
+        except (KeyError, IndexError) as e:
+            raise ValueError(f"Unexpected response format from LLM: {e}")
+
+    raise ValueError(last_error or "Failed to get a response after retries.")
+
+
+async def chat_about_report(
+    report_context: str, chat_history: list, question: str
+) -> str:
+    """Answer a follow-up question about a medical report."""
+    system_prompt = CHAT_SYSTEM_PROMPT.replace("{report_context}", report_context)
+
+    messages = [{"role": "system", "content": system_prompt}]
+
+    # Add conversation history
+    for msg in chat_history:
+        messages.append({"role": msg["role"], "content": msg["content"]})
+
+    # Add new question
+    messages.append({"role": "user", "content": question})
+
+    payload = {
+        "model": MODEL,
+        "messages": messages,
+        "temperature": 0.3,
+    }
+
+    return await _call_llm_text(payload)
+
+
 def _parse_llm_response(content: str) -> SimplifiedReport:
     """Parse LLM response string into a SimplifiedReport, with fallback extraction."""
     # Try direct JSON parse

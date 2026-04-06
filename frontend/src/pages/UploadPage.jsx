@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import FileUpload from "../components/FileUpload";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ResultsCard from "../components/ResultsCard";
+import FollowUpChat from "../components/FollowUpChat";
 import { analyzeReport } from "../api/medclear";
 
 export default function UploadPage() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
+  const [reportId, setReportId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ export default function UploadPage() {
     try {
       const response = await analyzeReport(file);
       setResult(response.data);
+      setReportId(response.report_id);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -29,6 +32,7 @@ export default function UploadPage() {
   function handleReset() {
     setFile(null);
     setResult(null);
+    setReportId(null);
     setError(null);
   }
 
@@ -80,6 +84,9 @@ export default function UploadPage() {
       {result && !loading && (
         <div className="space-y-6">
           <ResultsCard data={result} />
+
+          <FollowUpChat reportId={reportId} />
+
           <div className="flex justify-center gap-4 pt-4">
             <button
               onClick={handleReset}

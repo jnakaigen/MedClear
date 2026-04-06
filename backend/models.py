@@ -48,6 +48,7 @@ class SimplifiedReport(BaseModel):
 class AnalysisResponse(BaseModel):
     success: bool
     data: Optional[SimplifiedReport] = None
+    report_id: Optional[str] = None
     error: Optional[str] = None
 
 
@@ -69,6 +70,22 @@ class ReportListItem(BaseModel):
     summary: str
     severity_counts: dict[str, int]
     created_at: datetime
+
+
+# --- Chat models ---
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    history: list[ChatMessage]
 
 
 # --- Timeline models ---

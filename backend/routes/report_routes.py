@@ -7,8 +7,15 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from auth import get_current_user
 from database import get_db
-from llm_service import simplify_report, simplify_report_from_image
-from models import AnalysisResponse, ReportListItem, ReportOut
+from llm_service import chat_about_report, simplify_report, simplify_report_from_image
+from models import (
+    AnalysisResponse,
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
+    ReportListItem,
+    ReportOut,
+)
 from text_extractor import extract_text
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
@@ -28,6 +35,22 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 # In-memory LRU cache for LLM results (avoids duplicate API calls)
 CACHE_MAX_SIZE = 50
 _cache: OrderedDict = OrderedDict()
+
+
+def _build_report_context(report: dict) -> str:
+    """Build a text summary of the report for chat context."""
+    parts = [f"Report: {report['report_title']}", f"Summary: {report['summary']}", ""]
+    for s in report.get("sections", []):
+        parts.append(f"Section: {s['title']} (Severity: {s['severity']})")
+        parts.append(f"  Original: {s['original_text']}")
+        parts.append(f"  Simplified: {s['simplified_text']}")
+        parts.append("")
+    if report.get("action_items"):
+        parts.append("Action Items:")
+        for item in report["action_items"]:
+            parts.append(f"  - {item}")
+    parts.append(f"Follow-up: {report.get('follow_up', 'N/A')}")
+    return "\n".join(parts)
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
@@ -54,17 +77,14 @@ async def analyze_report(
         try:
             extracted_text = extract_text(file_bytes, file.content_type)
         except ValueError:
-            # Text extraction failed — for images, fall back to multimodal LLM
             if is_image:
                 use_multimodal = True
             else:
                 raise
 
-        # If image OCR produced very little text, use multimodal instead
         if is_image and len(extracted_text.split()) < 5:
             use_multimodal = True
 
-        # Check LLM cache
         cache_key = hashlib.sha256(file_bytes).hexdigest() if use_multimodal else hashlib.sha256(extracted_text.encode()).hexdigest()
         if cache_key in _cache:
             _cache.move_to_end(cache_key)
@@ -90,11 +110,13 @@ async def analyze_report(
             "sections": [s.model_dump() for s in result.sections],
             "action_items": result.action_items,
             "follow_up": result.follow_up,
+            "chat_history": [],
             "created_at": datetime.now(timezone.utc),
         }
         insert_result = await db.reports.insert_one(report_doc)
+        report_id = str(insert_result.inserted_id)
 
-        return AnalysisResponse(success=True, data=result)
+        return AnalysisResponse(success=True, data=result, report_id=report_id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -103,6 +125,80 @@ async def analyze_report(
             status_code=500,
             detail="An unexpected error occurred while analyzing the report.",
         )
+
+
+# --- Chat endpoints ---
+
+
+@router.post("/{report_id}/chat", response_model=ChatResponse)
+async def chat_with_report(
+    report_id: str,
+    request: ChatRequest,
+    user: dict = Depends(get_current_user),
+):
+    db = get_db()
+
+    try:
+        oid = ObjectId(report_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid report ID")
+
+    report = await db.reports.find_one({"_id": oid, "user_id": user["id"]})
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    report_context = _build_report_context(report)
+    chat_history = report.get("chat_history", [])
+
+    try:
+        reply = await chat_about_report(report_context, chat_history, request.message)
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Append to chat history in MongoDB
+    new_messages = [
+        {"role": "user", "content": request.message},
+        {"role": "assistant", "content": reply},
+    ]
+    await db.reports.update_one(
+        {"_id": oid},
+        {"$push": {"chat_history": {"$each": new_messages}}},
+    )
+
+    updated_history = chat_history + new_messages
+
+    return ChatResponse(
+        reply=reply,
+        history=[ChatMessage(role=m["role"], content=m["content"]) for m in updated_history],
+    )
+
+
+@router.get("/{report_id}/chat", response_model=list[ChatMessage])
+async def get_chat_history(
+    report_id: str,
+    user: dict = Depends(get_current_user),
+):
+    db = get_db()
+
+    try:
+        oid = ObjectId(report_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid report ID")
+
+    report = await db.reports.find_one(
+        {"_id": oid, "user_id": user["id"]},
+        {"chat_history": 1},
+    )
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    return [
+        ChatMessage(role=m["role"], content=m["content"])
+        for m in report.get("chat_history", [])
+    ]
+
+
+# --- List / Detail / Delete ---
 
 
 @router.get("", response_model=list[ReportListItem])
