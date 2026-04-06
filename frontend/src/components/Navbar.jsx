@@ -20,14 +20,19 @@ export default function Navbar() {
   }
 
   const linkClass = (path) =>
-    `text-sm font-medium px-3 py-2 rounded-lg transition-colors ${
+    `relative text-sm font-medium px-3 py-2 rounded-lg transition-all duration-200 ${
       isActive(path)
-        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+        ? "text-emerald-700 dark:text-emerald-300"
+        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+    }`;
+
+  const linkUnderline = (path) =>
+    `absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full bg-emerald-500 transition-all duration-300 ${
+      isActive(path) ? "w-4/5" : "w-0"
     }`;
 
   return (
-    <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
+    <header className="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg sticky top-0 z-10 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 no-underline">
@@ -42,9 +47,9 @@ export default function Navbar() {
         {/* Nav links */}
         {isAuthenticated && (
           <nav className="hidden sm:flex items-center gap-1">
-            <Link to="/" className={linkClass("/")}>Dashboard</Link>
-            <Link to="/upload" className={linkClass("/upload")}>Upload</Link>
-            <Link to="/timeline" className={linkClass("/timeline")}>Timeline</Link>
+            <Link to="/" className={linkClass("/")}><span>Dashboard</span><span className={linkUnderline("/")} /></Link>
+            <Link to="/upload" className={linkClass("/upload")}><span>Upload</span><span className={linkUnderline("/upload")} /></Link>
+            <Link to="/timeline" className={linkClass("/timeline")}><span>Timeline</span><span className={linkUnderline("/timeline")} /></Link>
           </nav>
         )}
 

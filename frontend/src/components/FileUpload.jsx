@@ -57,13 +57,13 @@ export default function FileUpload({ onFileSelected, selectedFile }) {
         onDragLeave={handleDrag}
         onDrop={handleDrop}
         className={`
-          relative cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-200
+          relative cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-300
           ${
             dragActive
-              ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+              ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 scale-[1.02] shadow-lg shadow-emerald-500/10"
               : selectedFile
               ? "border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-600"
-              : "border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 bg-white dark:bg-gray-900"
+              : "border-gray-300 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-md bg-white dark:bg-gray-900"
           }
         `}
       >
@@ -76,7 +76,7 @@ export default function FileUpload({ onFileSelected, selectedFile }) {
         />
 
         {selectedFile ? (
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-3 animate-scaleIn">
             <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
               <svg className="w-7 h-7 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
