@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from auth import get_current_user
 from database import get_db
-from llm_service import simplify_report
+from llm_service import simplify_report, simplify_report_from_image
 from models import AnalysisResponse, ReportListItem, ReportOut
 from text_extractor import extract_text
 
@@ -47,16 +47,36 @@ async def analyze_report(
         raise HTTPException(status_code=400, detail="File is too large. Max 10 MB.")
 
     try:
-        extracted_text = extract_text(file_bytes, file.content_type)
+        is_image = file.content_type.startswith("image/")
+        use_multimodal = False
+        extracted_text = ""
+
+        try:
+            extracted_text = extract_text(file_bytes, file.content_type)
+        except ValueError:
+            # Text extraction failed — for images, fall back to multimodal LLM
+            if is_image:
+                use_multimodal = True
+            else:
+                raise
+
+        # If image OCR produced very little text, use multimodal instead
+        if is_image and len(extracted_text.split()) < 5:
+            use_multimodal = True
 
         # Check LLM cache
-        text_hash = hashlib.sha256(extracted_text.encode()).hexdigest()
-        if text_hash in _cache:
-            _cache.move_to_end(text_hash)
-            result = _cache[text_hash]
+        cache_key = hashlib.sha256(file_bytes).hexdigest() if use_multimodal else hashlib.sha256(extracted_text.encode()).hexdigest()
+        if cache_key in _cache:
+            _cache.move_to_end(cache_key)
+            result = _cache[cache_key]
+        elif use_multimodal:
+            result = await simplify_report_from_image(file_bytes, file.content_type)
+            _cache[cache_key] = result
+            if len(_cache) > CACHE_MAX_SIZE:
+                _cache.popitem(last=False)
         else:
             result = await simplify_report(extracted_text)
-            _cache[text_hash] = result
+            _cache[cache_key] = result
             if len(_cache) > CACHE_MAX_SIZE:
                 _cache.popitem(last=False)
 

@@ -42,7 +42,7 @@ def extract_from_pdf(file_bytes: bytes) -> str:
         doc.close()
         return "\n\n".join(text_parts)
 
-    # Fallback: scanned PDF — OCR each page
+    # Fallback: scanned PDF — OCR each page with Tesseract
     if not TESSERACT_AVAILABLE:
         doc.close()
         raise ValueError(
@@ -62,12 +62,10 @@ def extract_from_pdf(file_bytes: bytes) -> str:
 
 
 def extract_from_image(file_bytes: bytes) -> str:
-    """Extract text from an image using OCR."""
+    """Extract text from an image using Tesseract OCR."""
     if not TESSERACT_AVAILABLE:
-        raise ValueError(
-            "Image text extraction requires Tesseract OCR. "
-            "Install it with: brew install tesseract"
-        )
+        # No OCR available — return empty so the caller can use multimodal LLM
+        return ""
 
     img = Image.open(io.BytesIO(file_bytes))
     return pytesseract.image_to_string(img)

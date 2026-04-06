@@ -1,3 +1,5 @@
+import os
+
 import uvicorn
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
@@ -21,10 +23,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="MedClear API", version="2.0.0", lifespan=lifespan)
 
-# CORS configuration
+# CORS configuration — allow localhost for dev and production frontend URL
+allowed_origins = ["http://localhost:5173"]
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    allowed_origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,4 +49,5 @@ async def health_check():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

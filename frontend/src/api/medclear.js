@@ -1,3 +1,7 @@
+// In dev, VITE_API_URL is empty so calls go through Vite proxy.
+// In production (Vercel), it points to the Railway backend URL.
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
 function getToken() {
   return localStorage.getItem("medclear-token");
 }
@@ -10,7 +14,7 @@ function authHeaders() {
 // --- Auth ---
 
 export async function signup(name, email, password) {
-  const res = await fetch("/api/auth/signup", {
+  const res = await fetch(`${API_BASE}/api/auth/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password }),
@@ -21,7 +25,7 @@ export async function signup(name, email, password) {
 }
 
 export async function login(email, password) {
-  const res = await fetch("/api/auth/login", {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -37,7 +41,7 @@ export async function analyzeReport(file) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch("/api/reports/analyze", {
+  const res = await fetch(`${API_BASE}/api/reports/analyze`, {
     method: "POST",
     headers: authHeaders(),
     body: formData,
@@ -49,7 +53,7 @@ export async function analyzeReport(file) {
 }
 
 export async function getReports() {
-  const res = await fetch("/api/reports", {
+  const res = await fetch(`${API_BASE}/api/reports`, {
     headers: authHeaders(),
   });
   const data = await res.json();
@@ -58,7 +62,7 @@ export async function getReports() {
 }
 
 export async function getReport(id) {
-  const res = await fetch(`/api/reports/${id}`, {
+  const res = await fetch(`${API_BASE}/api/reports/${id}`, {
     headers: authHeaders(),
   });
   const data = await res.json();
@@ -67,7 +71,7 @@ export async function getReport(id) {
 }
 
 export async function deleteReport(id) {
-  const res = await fetch(`/api/reports/${id}`, {
+  const res = await fetch(`${API_BASE}/api/reports/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -79,7 +83,7 @@ export async function deleteReport(id) {
 // --- Timeline ---
 
 export async function getTimeline() {
-  const res = await fetch("/api/timeline", {
+  const res = await fetch(`${API_BASE}/api/timeline`, {
     headers: authHeaders(),
   });
   const data = await res.json();
